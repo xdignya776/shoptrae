@@ -178,14 +178,41 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({ isOpen, onClose })
                   </div>
                   <div>
                     <label className="block text-xs font-medium mb-1">Country</label>
-                    <input 
+                    <select
                       required
-                      type="text" 
                       value={formData.country}
                       onChange={(e) => setFormData({...formData, country: e.target.value})}
-                      placeholder="US"
                       className="w-full px-4 py-3 bg-white border border-gray-200 rounded-xl focus:border-black focus:ring-0 outline-none transition-all text-sm"
-                    />
+                    >
+                      <option value="US">United States</option>
+                      <option value="GB">United Kingdom</option>
+                      <option value="CA">Canada</option>
+                      <option value="AU">Australia</option>
+                      <option value="DE">Germany</option>
+                      <option value="FR">France</option>
+                      <option value="IT">Italy</option>
+                      <option value="ES">Spain</option>
+                      <option value="NL">Netherlands</option>
+                      <option value="BE">Belgium</option>
+                      <option value="AT">Austria</option>
+                      <option value="CH">Switzerland</option>
+                      <option value="SE">Sweden</option>
+                      <option value="NO">Norway</option>
+                      <option value="DK">Denmark</option>
+                      <option value="FI">Finland</option>
+                      <option value="PL">Poland</option>
+                      <option value="GR">Greece</option>
+                      <option value="PT">Portugal</option>
+                      <option value="IE">Ireland</option>
+                      <option value="NZ">New Zealand</option>
+                      <option value="JP">Japan</option>
+                      <option value="CN">China</option>
+                      <option value="IN">India</option>
+                      <option value="BR">Brazil</option>
+                      <option value="MX">Mexico</option>
+                      <option value="AR">Argentina</option>
+                      <option value="ZA">South Africa</option>
+                    </select>
                   </div>
                 </div>
               </div>

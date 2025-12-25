@@ -448,6 +448,12 @@ export const wooService = {
    */
   async processCheckout(input: CheckoutInput, cartItems: CartItem[]): Promise<{ success: boolean; orderId?: number; redirect?: string; error?: string }> {
     try {
+      // Ensure country is a valid 2-letter ISO code (WooCommerce requirement)
+      // WooCommerce expects country codes like "GR" not country names like "Greece"
+      const countryCode = input.country && input.country.length === 2 
+        ? input.country.toUpperCase() 
+        : 'US'; // Default to US if invalid
+
       const checkoutInput: any = {
         billing: {
           firstName: input.firstName,
@@ -457,7 +463,7 @@ export const wooService = {
           city: input.city,
           state: input.state,
           postcode: input.postcode,
-          country: input.country || 'US',
+          country: countryCode,
         },
         shipping: {
           firstName: input.firstName,
@@ -466,7 +472,7 @@ export const wooService = {
           city: input.city,
           state: input.state,
           postcode: input.postcode,
-          country: input.country || 'US',
+          country: countryCode,
         },
         paymentMethod: input.paymentMethod || 'bacs', // Default to bank transfer, change as needed
         customerNote: '',
