@@ -46,12 +46,6 @@ const GET_PRODUCTS_QUERY = `
             slug
           }
         }
-        attributes {
-          nodes {
-            name
-            options
-          }
-        }
       }
     }
   }
@@ -106,10 +100,8 @@ const GET_SINGLE_PRODUCT_QUERY = `
             price
             stockStatus
             attributes {
-              nodes {
-                name
-                value
-              }
+              name
+              value
             }
           }
         }
@@ -121,10 +113,20 @@ const GET_SINGLE_PRODUCT_QUERY = `
           slug
         }
       }
-      attributes {
-        nodes {
-          name
-          options
+      ... on VariableProduct {
+        defaultAttributes {
+          nodes {
+            name
+            options
+          }
+        }
+      }
+      ... on GroupProduct {
+        defaultAttributes {
+          nodes {
+            name
+            options
+          }
         }
       }
     }
@@ -155,10 +157,8 @@ const ADD_TO_CART_MUTATION = `
         total
         variation {
           attributes {
-            nodes {
-              name
-              value
-            }
+            name
+            value
           }
         }
       }
@@ -184,6 +184,9 @@ const GET_CART_QUERY = `
               ... on SimpleProduct {
                 price
               }
+              ... on VariableProduct {
+                price
+              }
             }
           }
           quantity
@@ -191,10 +194,8 @@ const GET_CART_QUERY = `
           total
           variation {
             attributes {
-              nodes {
-                name
-                value
-              }
+              name
+              value
             }
           }
         }

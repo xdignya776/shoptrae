@@ -34,7 +34,7 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const product = wooItem.product?.node;
     if (!product) return null;
 
-    const variantKey = wooItem.variation?.attributes?.nodes
+    const variantKey = wooItem.variation?.attributes
       ?.map((attr: any) => `${attr.name}:${attr.value}`).join(', ') || 'default';
 
     const cartKey = `${product.databaseId || product.id}-${variantKey}`;
