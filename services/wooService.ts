@@ -52,8 +52,10 @@ const GET_PRODUCTS_QUERY = `
               price
               stockStatus
               attributes {
-                name
-                value
+                nodes {
+                  name
+                  value
+                }
               }
             }
           }
@@ -119,8 +121,10 @@ const GET_SINGLE_PRODUCT_QUERY = `
             price
             stockStatus
             attributes {
-              name
-              value
+              nodes {
+                name
+                value
+              }
             }
           }
         }
@@ -283,8 +287,11 @@ const CHECKOUT_MUTATION = `
 
 /**
  * Helper function to make GraphQL requests
+ * @param query - GraphQL query string
+ * @param variables - GraphQL variables
+ * @param useCredentials - Whether to include credentials (needed for cart operations)
  */
-async function graphqlRequest(query: string, variables?: any) {
+async function graphqlRequest(query: string, variables?: any, useCredentials: boolean = false) {
   try {
     const response = await fetch(WP_API_URL, {
       method: 'POST',
@@ -295,7 +302,10 @@ async function graphqlRequest(query: string, variables?: any) {
         query,
         variables,
       }),
-      credentials: 'include', // Important for cart session
+      // Only use credentials for cart operations (add, update, remove, checkout)
+      // Read operations (products, categories) don't need credentials
+      // This avoids CORS issues when WordPress uses wildcard CORS
+      credentials: useCredentials ? 'include' : 'omit',
     });
 
     if (!response.ok) {
@@ -326,7 +336,7 @@ export const wooService = {
    */
   async getProducts(first: number = 50): Promise<Product[]> {
     try {
-      const data = await graphqlRequest(GET_PRODUCTS_QUERY, { first });
+      const data = await graphqlRequest(GET_PRODUCTS_QUERY, { first }, false);
 
       if (data?.products?.nodes) {
         return data.products.nodes.map(transformWooProduct);
@@ -345,7 +355,7 @@ export const wooService = {
    */
   async getProduct(id: string): Promise<Product | null> {
     try {
-      const data = await graphqlRequest(GET_SINGLE_PRODUCT_QUERY, { id });
+      const data = await graphqlRequest(GET_SINGLE_PRODUCT_QUERY, { id }, false);
       
       if (data?.product) {
         return transformWooProduct(data.product);
@@ -363,7 +373,7 @@ export const wooService = {
    */
   async getCategories(): Promise<Array<{ id: string; name: string; slug: string; description?: string; image?: string }>> {
     try {
-      const data = await graphqlRequest(GET_CATEGORIES_QUERY);
+      const data = await graphqlRequest(GET_CATEGORIES_QUERY, undefined, false);
 
       if (data?.productCategories?.nodes) {
         return data.productCategories.nodes.map((cat: any) => ({
@@ -407,7 +417,7 @@ export const wooService = {
         input.variationId = variationId;
       }
 
-      const data = await graphqlRequest(ADD_TO_CART_MUTATION, { input });
+      const data = await graphqlRequest(ADD_TO_CART_MUTATION, { input }, true);
       return data?.addToCart?.cartItem || null;
     } catch (error) {
       console.error("Failed to add to cart", error);
@@ -420,7 +430,7 @@ export const wooService = {
    */
   async getCart(): Promise<any> {
     try {
-      const data = await graphqlRequest(GET_CART_QUERY);
+      const data = await graphqlRequest(GET_CART_QUERY, undefined, true);
       return data?.cart || null;
     } catch (error) {
       console.error("Failed to get cart", error);
@@ -437,7 +447,7 @@ export const wooService = {
         input: {
           items: [{ key, quantity }],
         },
-      });
+      }, true);
       return !!data?.updateItemQuantities;
     } catch (error) {
       console.error("Failed to update cart item", error);
@@ -454,7 +464,7 @@ export const wooService = {
         input: {
           keys,
         },
-      });
+      }, true);
       return !!data?.removeItemsFromCart;
     } catch (error) {
       console.error("Failed to remove from cart", error);
@@ -498,7 +508,7 @@ export const wooService = {
         isPaid: false, // Set to true if payment is processed immediately
       };
 
-      const data = await graphqlRequest(CHECKOUT_MUTATION, { input: checkoutInput });
+      const data = await graphqlRequest(CHECKOUT_MUTATION, { input: checkoutInput }, true);
 
       if (data?.checkout?.order) {
         return {
@@ -578,7 +588,7 @@ function transformWooProduct(node: any): Product {
       ? parseFloat(v.price.replace(/[^0-9.]/g, '') || '0')
       : (v.price || 0),
     stockQuantity: undefined,
-    attributes: v.attributes?.map((a: any) => ({ name: a.name, value: a.value })) || [],
+    attributes: v.attributes?.nodes?.map((a: any) => ({ name: a.name, value: a.value })) || [],
   }));
 
   return {
