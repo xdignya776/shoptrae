@@ -34,7 +34,7 @@ npm install
 
 ### 2. Configure Environment Variables
 
-Create a `.env.local` file in the root directory:
+Create a `.env.local` file in the root directory (copy from `.env.example`):
 
 ```env
 # WordPress GraphQL API Configuration
@@ -44,6 +44,12 @@ VITE_WP_SITE_URL=https://api.xdignya.uk
 # Optional: Gemini API Key (for AI features)
 VITE_GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+**Important Notes:**
+- `VITE_WP_GRAPHQL_URL` - Your WordPress GraphQL endpoint
+- `VITE_WP_SITE_URL` - Your WordPress site base URL (for links/images)
+- `VITE_GEMINI_API_KEY` - Optional, only needed for AI "Vibe Check" feature
+- **WooCommerce Consumer Key/Secret are NOT needed** - GraphQL uses session-based auth, not REST API keys
 
 ### 3. Run Locally
 

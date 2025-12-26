@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useProducts } from '../context/ProductContext';
-import { IphoneModel } from '../types';
+import { IphoneModel, ProductAttribute } from '../types';
 import { useCart } from '../context/CartContext';
 import { useWishlist } from '../context/WishlistContext';
 import { Star, Sparkles, Truck, ShieldCheck, Info, Heart, Share2, Facebook, Twitter, Link as LinkIcon, Check, Minus, Plus } from 'lucide-react';
@@ -16,7 +16,16 @@ export const ProductPage: React.FC = () => {
   const { addToCart } = useCart();
   const { toggleWishlist, isInWishlist } = useWishlist();
 
-  const [selectedModel, setSelectedModel] = useState<IphoneModel | null>(null);
+  const modelAttributeOptions = React.useMemo(() => {
+    const attr: ProductAttribute | undefined = product.attributes?.find(a =>
+      (a.name || '').toLowerCase().includes('model') ||
+      (a.name || '').toLowerCase().includes('phone') ||
+      (a.name || '').toLowerCase().includes('device')
+    );
+    return attr?.options?.length ? attr.options : null;
+  }, [product.attributes]);
+
+  const [selectedModel, setSelectedModel] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [aiDescription, setAiDescription] = useState<string>("");
   const [loadingAi, setLoadingAi] = useState(false);
@@ -178,7 +187,7 @@ export const ProductPage: React.FC = () => {
             <div className="mb-8">
               <label className="block text-sm font-medium mb-3">Select Model</label>
               <div className="grid grid-cols-2 gap-3">
-                {Object.values(IphoneModel).map((model) => (
+                {(modelAttributeOptions || Object.values(IphoneModel)).map((model) => (
                   <button
                     key={model}
                     onClick={() => setSelectedModel(model)}

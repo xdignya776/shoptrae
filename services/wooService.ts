@@ -38,6 +38,25 @@ const GET_PRODUCTS_QUERY = `
           regularPrice
           salePrice
           stockStatus
+          attributes {
+            nodes {
+              name
+              options
+            }
+          }
+          variations(first: 20) {
+            nodes {
+              id
+              databaseId
+              name
+              price
+              stockStatus
+              attributes {
+                name
+                value
+              }
+            }
+          }
         }
         productCategories {
           nodes {
@@ -523,36 +542,56 @@ export const wooService = {
  * Helper to transform WPGraphQL response to our App's Product type
  */
 function transformWooProduct(node: any): Product {
-  // Extract price - handle both string and number formats
+  // Extract price with fallbacks: salePrice -> price -> regularPrice
   let price = 0;
-  if (typeof node.price === 'string') {
-    price = parseFloat(node.price.replace(/[^0-9.]/g, '') || '0');
-  } else if (typeof node.price === 'number') {
-    price = node.price;
-  } else if (node.salePrice) {
-    price = typeof node.salePrice === 'string' 
-      ? parseFloat(node.salePrice.replace(/[^0-9.]/g, '') || '0')
-      : node.salePrice;
-  } else if (node.regularPrice) {
-    price = typeof node.regularPrice === 'string'
-      ? parseFloat(node.regularPrice.replace(/[^0-9.]/g, '') || '0')
-      : node.regularPrice;
+  const priceCandidates = [node.salePrice, node.price, node.regularPrice].filter(Boolean);
+  for (const p of priceCandidates) {
+    if (typeof p === 'number') {
+      price = p;
+      break;
+    }
+    if (typeof p === 'string') {
+      const parsed = parseFloat(p.replace(/[^0-9.]/g, '') || '0');
+      if (!Number.isNaN(parsed)) {
+        price = parsed;
+        break;
+      }
+    }
   }
 
   // Extract description - prefer shortDescription, fallback to description
   const description = node.shortDescription || node.description || '';
   const cleanDescription = description.replace(/<[^>]*>?/gm, '').trim();
 
+  // Map attributes (only for variable products)
+  const attributes = node.attributes?.nodes?.map((attr: any, idx: number) => ({
+    id: attr.id || `${node.id}-attr-${idx}`,
+    name: attr.name,
+    options: attr.options || [],
+  }));
+
+  // Map variations (if present)
+  const variations = node.variations?.nodes?.map((v: any) => ({
+    id: v.id || v.databaseId?.toString() || '',
+    name: v.name,
+    price: typeof v.price === 'string'
+      ? parseFloat(v.price.replace(/[^0-9.]/g, '') || '0')
+      : (v.price || 0),
+    stockQuantity: undefined,
+    attributes: v.attributes?.map((a: any) => ({ name: a.name, value: a.value })) || [],
+  }));
+
   return {
     id: node.id || node.databaseId?.toString() || '',
     title: node.name || '',
     price,
     image: node.image?.sourceUrl || '',
-    category: node.productCategories?.nodes[0]?.name || 'Uncategorized',
+    category: node.productCategories?.nodes?.[0]?.name || 'Uncategorized',
     baseDescription: cleanDescription,
     slug: node.slug || '',
     stockStatus: node.stockStatus || 'IN_STOCK',
-    // Store databaseId for cart operations
     ...(node.databaseId && { databaseId: node.databaseId }),
+    ...(attributes && { attributes }),
+    ...(variations && { variations }),
   };
 }
